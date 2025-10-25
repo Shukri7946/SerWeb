@@ -4,10 +4,15 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: '*/5 * * * *'  # Runs every 5 minutes
+  workflow_dispatch:        # Allows manual trigger
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       # 1. Checkout repository
@@ -38,7 +43,17 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      # 5. Deploy to Firebase Hosting using service account
+      # 5. Commit and push exported scripts if there are changes
+      - name: Commit and push exported scripts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/scripts/*
+          # Only commit if there are changes
+          git diff --quiet || git commit -m "Auto-export scripts from Firestore [skip ci]"
+          git push origin main
+
+      # 6. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0
         with:
