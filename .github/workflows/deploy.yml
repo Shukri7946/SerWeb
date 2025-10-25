@@ -3,38 +3,33 @@ name: Firebase Hosting Deploy
 on:
   push:
     branches:
-      - main  # deploy whenever you push to main
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
 
-      # 3. Install project dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4. Export scripts using Firebase Admin SDK
       - name: Export scripts
         run: node exportScripts.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      # 5. Deploy to Firebase Hosting using firebase-action
       - name: Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0
         with:
           args: deploy --only hosting
         env:
           PROJECT_ID: gameweb-c16c7
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
