@@ -3485,73 +3485,99 @@ async function loadScripts() {
 
         // View script details
 async function viewScriptDetails(scriptId) {
+     await debugScriptAccess(scriptId); // Temporary debug
     try {
         const docRef = doc(db, 'scripts', scriptId);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const script = { id: docSnap.id, ...docSnap.data() };
-            
-            showScriptDetails(script);
-            
-            // Increment view count
+        
+        if (!docSnap.exists()) {
+            showNotification('Script not found', true);
+            return;
+        }
+
+        const script = { id: docSnap.id, ...docSnap.data() };
+        
+        // Check if user has permission to read this script
+        if (!script.author && !script.public) {
+            showNotification('You do not have permission to view this script', true);
+            return;
+        }
+
+        showScriptDetails(script);
+        
+        // Increment view count with error handling
+        try {
             await updateDoc(docRef, {
                 Views: (script.Views || 0) + 1
             });
-        } else {
-            showNotification('Script not found', true);
+        } catch (updateError) {
+            console.warn('Could not update view count:', updateError);
+            // Continue showing script even if view count update fails
         }
+        
     } catch (error) {
         console.error('Error loading script details:', error);
-        showNotification('Error loading script details: ' + error.message, true);
+        
+        if (error.code === 'permission-denied') {
+            showNotification('Permission denied: You cannot view this script', true);
+        } else if (error.code === 'not-found') {
+            showNotification('Script not found', true);
+        } else {
+            showNotification('Error loading script details: ' + error.message, true);
+        }
     }
 }
 
 
 
-        function showScriptDetails(script) {
-            document.getElementById('detailsTitle').textContent = script.title;
-            document.getElementById('detailsScriptTitle').textContent = script.title;
-           document.getElementById('detailsDownloads').textContent = formatNumber(script.Views || 0);
-            document.getElementById('detailsDate').textContent = formatDate(script.createdAt?.toDate() || new Date());
-            document.getElementById('detailsCode').textContent = script.code;
-            document.getElementById('detailsAuthor').textContent = script.authorName || "Unknown";
-            
-            // Set game button URL
-            if (script.gameId && script.gameId !== "0") {
-                document.getElementById('gameBtn').href = `https://www.roblox.com/games/${script.gameId}`;
-                document.getElementById('gameBtn').style.display = 'flex';
-            } else {
-                document.getElementById('gameBtn').style.display = 'none';
+      function showScriptDetails(script) {
+    try {
+        // Validate required fields
+        if (!script || !script.title || !script.code) {
+            showNotification('Invalid script data', true);
+            return;
+        }
+
+        document.getElementById('detailsTitle').textContent = script.title || 'Untitled Script';
+        document.getElementById('detailsScriptTitle').textContent = script.title || 'Untitled Script';
+        document.getElementById('detailsDownloads').textContent = formatNumber(script.Views || 0);
+        document.getElementById('detailsDate').textContent = formatDate(script.createdAt?.toDate() || new Date());
+        document.getElementById('detailsCode').textContent = script.code || '// No code available';
+        document.getElementById('detailsAuthor').textContent = script.authorName || "Unknown";
+        
+        // Set game button URL safely
+        const gameBtn = document.getElementById('gameBtn');
+        if (script.gameId && script.gameId !== "0") {
+            gameBtn.href = `https://www.roblox.com/games/${script.gameId}`;
+            gameBtn.style.display = 'flex';
+        } else {
+            gameBtn.style.display = 'none';
+        }
+
+        // Set image with fallback
+        const detailsImage = document.getElementById('detailsImage');
+        if (script.imageBase64) {
+            detailsImage.src = script.imageBase64;
+        } else {
+            detailsImage.src = "https://cdn-icons-png.flaticon.com/512/2721/2721620.png";
+        }
+        detailsImage.onerror = function() {
+            this.src = "https://cdn-icons-png.flaticon.com/512/2721/2721620.png";
+        };
+        
+        // Show/hide patched overlay
+        const patchedOverlay = document.getElementById('patchedOverlay');
+        if (script.patched) {
+            patchedOverlay.style.display = 'flex';
+            const scriptImage = document.querySelector('.script-details-image');
+            if (scriptImage) {
+                scriptImage.appendChild(patchedOverlay);
             }
-            
+        } else {
+            patchedOverlay.style.display = 'none';
+        }
 
-            // Set image
-            const detailsImage = document.getElementById('detailsImage');
-    if (script.imageBase64) {
-        detailsImage.src = script.imageBase64;
-    } else if (script.imageBase64) {
-        detailsImage.src = script.imageBase64;
-    } else {
-        detailsImage.src = "https://cdn-icons-png.flaticon.com/512/2721/2721620.png";
-    }
-            detailsImage.onerror = function() {
-                this.src = "https://cdn-icons-png.flaticon.com/512/2721/2721620.png";
-            };
-            
-           // Show/hide patched overlay on the image
-const patchedOverlay = document.getElementById('patchedOverlay');
-if (script.patched) {
-    patchedOverlay.style.display = 'flex';
-    // Move the overlay to be inside the script image
-    const scriptImage = document.querySelector('.script-details-image');
-    scriptImage.appendChild(patchedOverlay);
-} else {
-    patchedOverlay.style.display = 'none';
-}
-            
-
-
-            // Setup action buttons
+         // Setup action buttons
             const viewRawBtn = document.getElementById('viewRawBtn');
             const downloadBtn = document.getElementById('downloadBtn');
             
@@ -3563,26 +3589,65 @@ viewRawBtn.target = "_blank";
 downloadBtn.href = url;
 downloadBtn.download = `${(script.title || scriptId).replace(/\s+/g, '_')}.lua`;
 
+   document.getElementById('scriptDetailsModal').style.display = 'flex';
 
-            
-            document.getElementById('scriptDetailsModal').style.display = 'flex';
-            
-            // Apply syntax highlighting
-     setTimeout(() => {
-        hljs.highlightElement(document.getElementById('detailsCode'));
-    }, 100);            
-            // Clean up URL when modal closes
-            const modal = document.getElementById('scriptDetailsModal');
-            const closeHandler = function() {
-                URL.revokeObjectURL(url);
-                modal.removeEventListener('click', closeHandler);
-            };
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeHandler();
-                }
+        
+
+        // Apply syntax highlighting
+        setTimeout(() => {
+            const codeElement = document.getElementById('detailsCode');
+            if (codeElement) {
+                hljs.highlightElement(codeElement);
+            }
+        }, 100);
+        
+        
+        // Clean up URL when modal closes
+        const modal = document.getElementById('scriptDetailsModal');
+        const closeHandler = function() {
+            URL.revokeObjectURL(url);
+        };
+        
+        // Remove existing listeners and add new one
+        modal.removeEventListener('click', closeHandler);
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeHandler();
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error displaying script details:', error);
+        showNotification('Error displaying script details', true);
+    }
+}
+
+
+// Add this temporary debug function
+async function debugScriptAccess(scriptId) {
+    try {
+        console.log('Attempting to access script:', scriptId);
+        const docRef = doc(db, 'scripts', scriptId);
+        const docSnap = await getDoc(docRef);
+        
+        console.log('Document exists:', docSnap.exists());
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log('Script data:', {
+                id: docSnap.id,
+                title: data.title,
+                author: data.author,
+                hasAuthor: !!data.author,
+                currentUser: currentUser ? currentUser.uid : 'no user'
             });
         }
+    } catch (error) {
+        console.error('Debug access error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+    }
+}
+
 
         function closeScriptDetails() {
             document.getElementById('scriptDetailsModal').style.display = 'none';
@@ -3665,24 +3730,83 @@ async function editScript(scriptId) {
             }
         }
 
-      async function copyScript(scriptId) {
+        
+   async function copyScript(scriptId) {
+        await debugCopyScript(scriptId); // Debug first
+    try {
+        const docRef = doc(db, 'scripts', scriptId);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            showNotification('Script not found', true);
+            return;
+        }
+
+        const script = docSnap.data();
+        
+        // Copy to clipboard
+        await navigator.clipboard.writeText(script.code || '');
+        showNotification('Script copied to clipboard!');
+
+        // Update copyCount - FIXED: Use specific field update
+        await updateDoc(docRef, {
+            copyCount: (script.copyCount || 0) + 1
+        });
+
+        // Update the UI immediately
+        const scriptCard = document.getElementById(`script-${scriptId}`);
+        if (scriptCard) {
+            const downloadSpan = scriptCard.querySelector('.script-meta span:nth-child(2)');
+            if (downloadSpan) {
+                const newCount = (script.copyCount || 0) + 1;
+                downloadSpan.innerHTML = `<i class="fas fa-download"></i> ${formatNumber(newCount)}`;
+            }
+        }
+
+    } catch (error) {
+        console.error('Error copying script:', error);
+        
+        if (error.code === 'permission-denied') {
+            console.log('Permission denied for copyCount update');
+            // Still show success for copy, just log the update error
+        } else {
+            showNotification('Error copying script', true);
+        }
+    }
+}
+
+async function debugCopyScript(scriptId) {
     try {
         const docRef = doc(db, 'scripts', scriptId);
         const docSnap = await getDoc(docRef);
         
-        if (docSnap.exists()) {
-            const script = docSnap.data();
-            
-            await navigator.clipboard.writeText(script.code);
-            showNotification('Script copied to clipboard!');
-            
-            await updateDoc(docRef, {
-                copyCount: (script.copyCount || 0) + 1
-            });
+        if (!docSnap.exists()) {
+            console.log('Script not found');
+            return;
         }
+
+        const script = docSnap.data();
+        console.log('Current script data:', {
+            id: scriptId,
+            copyCount: script.copyCount,
+            author: script.author,
+            currentUser: currentUser ? currentUser.uid : 'no user'
+        });
+
+        // Test the update
+        const newCopyCount = (script.copyCount || 0) + 1;
+        console.log('Attempting to update copyCount to:', newCopyCount);
+        
+        await updateDoc(docRef, {
+            copyCount: newCopyCount
+        });
+        
+        console.log('Update successful!');
+        
     } catch (error) {
-        console.error('Error copying script:', error);
-        showNotification('Error copying script', true);
+        console.error('Debug update error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
     }
 }
 
@@ -3701,11 +3825,12 @@ async function loadUserStats() {
         
         let totalViews = 0;
         let totalDownloads = 0;
-        
+
         snapshot.forEach(doc => {
             const script = doc.data();
             totalViews += script.Views || 0;
              totalDownloads += script.copyCount || 0;
+            
         });
         
         
@@ -3714,6 +3839,7 @@ async function loadUserStats() {
         document.getElementById('statViews').textContent = formatNumber(totalViews);
         document.getElementById('statDownloads').textContent = formatNumber(totalDownloads);
         
+
         // Calculate days since joined
        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
 if (userDoc.exists()) {
