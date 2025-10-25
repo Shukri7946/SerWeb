@@ -1,0 +1,39 @@
+name: Firebase Hosting Deploy
+
+on:
+  push:
+    branches:
+      - main  # change to your deployment branch if needed
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      # 3. Install project dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Export scripts from Firestore
+      - name: Export scripts
+        run: node exportScripts.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      # 5. Install Firebase CLI globally
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # 6. Deploy updated scripts to Firebase Hosting
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}

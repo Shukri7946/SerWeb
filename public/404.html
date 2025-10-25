@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - ScriptHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --secondary: #06d6a0;
+            --dark: #0f0f23;
+            --darker: #090915;
+            --light: #e2e8f0;
+            --gray: #64748b;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 50%, var(--darker) 100%);
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Animated Background */
+        .background-effects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+        
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .shape {
+            position: absolute;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite linear;
+        }
+        
+        .shape:nth-child(1) {
+            width: 120px;
+            height: 120px;
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 80px;
+            height: 80px;
+            top: 70%;
+            left: 85%;
+            animation-delay: -5s;
+            background: var(--secondary);
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 80%;
+            left: 15%;
+            animation-delay: -10s;
+            background: var(--warning);
+        }
+        
+        .shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 30%;
+            left: 75%;
+            animation-delay: -15s;
+            background: var(--danger);
+        }
+        
+        /* Snowflakes */
+        .snowflakes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            animation: snowfall linear infinite;
+            user-select: none;
+        }
+        
+        @keyframes snowfall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Glitch Effect */
+        .glitch-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .glitch {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 var(--primary);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 var(--secondary);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        
+        @keyframes glitch-anim {
+            0% {
+                clip: rect(31px, 9999px, 15px, 0);
+            }
+            5% {
+                clip: rect(64px, 9999px, 79px, 0);
+            }
+            10% {
+                clip: rect(19px, 9999px, 32px, 0);
+            }
+            15% {
+                clip: rect(87px, 9999px, 52px, 0);
+            }
+            20% {
+                clip: rect(9px, 9999px, 29px, 0);
+            }
+            25% {
+                clip: rect(42px, 9999px, 73px, 0);
+            }
+            30% {
+                clip: rect(56px, 9999px, 88px, 0);
+            }
+            35% {
+                clip: rect(12px, 9999px, 45px, 0);
+            }
+            40% {
+                clip: rect(68px, 9999px, 91px, 0);
+            }
+            45% {
+                clip: rect(23px, 9999px, 37px, 0);
+            }
+            50% {
+                clip: rect(77px, 9999px, 84px, 0);
+            }
+            55% {
+                clip: rect(5px, 9999px, 26px, 0);
+            }
+            60% {
+                clip: rect(51px, 9999px, 95px, 0);
+            }
+            65% {
+                clip: rect(38px, 9999px, 61px, 0);
+            }
+            70% {
+                clip: rect(82px, 9999px, 98px, 0);
+            }
+            75% {
+                clip: rect(17px, 9999px, 48px, 0);
+            }
+            80% {
+                clip: rect(63px, 9999px, 72px, 0);
+            }
+            85% {
+                clip: rect(28px, 9999px, 41px, 0);
+            }
+            90% {
+                clip: rect(74px, 9999px, 89px, 0);
+            }
+            95% {
+                clip: rect(3px, 9999px, 21px, 0);
+            }
+            100% {
+                clip: rect(59px, 9999px, 66px, 0);
+            }
+        }
+        
+        @keyframes glitch-anim2 {
+            0% {
+                clip: rect(85px, 9999px, 100px, 0);
+            }
+            5% {
+                clip: rect(22px, 9999px, 36px, 0);
+            }
+            10% {
+                clip: rect(67px, 9999px, 93px, 0);
+            }
+            15% {
+                clip: rect(14px, 9999px, 47px, 0);
+            }
+            20% {
+                clip: rect(78px, 9999px, 81px, 0);
+            }
+            25% {
+                clip: rect(8px, 9999px, 30px, 0);
+            }
+            30% {
+                clip: rect(53px, 9999px, 97px, 0);
+            }
+            35% {
+                clip: rect(41px, 9999px, 58px, 0);
+            }
+            40% {
+                clip: rect(96px, 9999px, 99px, 0);
+            }
+            45% {
+                clip: rect(26px, 9999px, 43px, 0);
+            }
+            50% {
+                clip: rect(71px, 9999px, 76px, 0);
+            }
+            55% {
+                clip: rect(11px, 9999px, 24px, 0);
+            }
+            60% {
+                clip: rect(62px, 9999px, 90px, 0);
+            }
+            65% {
+                clip: rect(33px, 9999px, 55px, 0);
+            }
+            70% {
+                clip: rect(88px, 9999px, 94px, 0);
+            }
+            75% {
+                clip: rect(19px, 9999px, 39px, 0);
+            }
+            80% {
+                clip: rect(69px, 9999px, 86px, 0);
+            }
+            85% {
+                clip: rect(7px, 9999px, 27px, 0);
+            }
+            90% {
+                clip: rect(49px, 9999px, 65px, 0);
+            }
+            95% {
+                clip: rect(2px, 9999px, 18px, 0);
+            }
+            100% {
+                clip: rect(57px, 9999px, 70px, 0);
+            }
+        }
+        
+        /* Main Container */
+        .error-container {
+            text-align: center;
+            padding: 40px;
+            max-width: 700px;
+            background: rgba(15, 15, 35, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .error-code {
+            font-size: 8rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--primary), var(--secondary), var(--danger));
+             background-clip: text;          /* standard */
+             -webkit-background-clip: text;  /* WebKit prefix */
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 20px;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        .error-message {
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            color: var(--light);
+            font-weight: 700;
+        }
+        
+        .error-description {
+            color: var(--gray);
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            background: rgba(26, 26, 46, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--danger);
+        }
+        
+        .ip-display {
+            display: inline-block;
+            background: rgba(239, 68, 68, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 10px 0;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+        }
+        
+        .btn-secondary {
+            background: rgba(26, 26, 46, 0.7);
+            color: var(--light);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            margin-left: 15px;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(139, 92, 246, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        #retryBtn {
+            margin-top: 10px;
+        }
+        
+        #detectedIp {
+            color: var(--danger);
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .security-icon {
+            font-size: 4rem;
+            color: var(--danger);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        .countdown {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: var(--gray);
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            33% {
+                transform: translateY(-20px) rotate(120deg);
+            }
+            66% {
+                transform: translateY(10px) rotate(240deg);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-5px);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(5px);
+            }
+        }
+        
+        /* Particles Container */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 5rem;
+            }
+            
+            .error-message {
+                font-size: 1.8rem;
+            }
+            
+            .error-description {
+                font-size: 1rem;
+            }
+            
+            .btn {
+                padding: 12px 24px;
+                font-size: 1rem;
+            }
+            
+            .btn-container {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="background-effects">
+        <div class="floating-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+        <div class="snowflakes" id="snowflakes"></div>
+        <div id="particles-js"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="error-container">
+        <div class="security-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        
+        <div class="glitch-container">
+            <h1 class="error-code glitch" data-text="403">403</h1>
+        </div>
+        
+        <h2 class="error-message">Access Denied</h2>
+        
+        <div class="error-description">
+            <p>Your IP address <span class="ip-display">(<span id="detectedIp">Checking...</span>)</span> is not authorized to access this website.</p>
+            <p>If you believe this is an error, please contact the administrator.</p>
+        </div>
+        
+        <div class="btn-container">
+            <button class="btn btn-primary" id="retryBtn" onclick="retryAccess()">
+                <i class="fas fa-redo"></i> Retry Access Check
+            </button>
+            <button class="btn btn-secondary" onclick="showContactInfo()">
+                <i class="fas fa-envelope"></i> Contact Admin
+            </button>
+        </div>
+        
+        <div class="countdown" id="countdown">
+            Auto-retrying in <span id="countdownTimer">10</span> seconds...
+        </div>
+    </div>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center;">
+        <div style="background: var(--dark); padding: 30px; border-radius: 15px; max-width: 500px; text-align: center; border: 1px solid var(--primary);">
+            <h3 style="margin-bottom: 20px; color: var(--primary);">Contact Administrator</h3>
+            <p style="margin-bottom: 20px; color: var(--light);">If you believe you should have access to ScriptHub, please contact the administrator with your IP address and reason for access.</p>
+            <p style="margin-bottom: 20px; background: rgba(26,26,46,0.7); padding: 15px; border-radius: 8px; font-family: monospace;">
+                Your IP: <span id="modalIp">Loading...</span>
+            </p>
+            <button class="btn btn-primary" onclick="closeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // Initialize particles.js
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#8b5cf6" },
+                shape: { type: "circle" },
+                opacity: { value: 0.3, random: true },
+                size: { value: 3, random: true },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#8b5cf6",
+                    opacity: 0.2,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 2,
+                    direction: "none",
+                    random: true,
+                    straight: false,
+                    out_mode: "out",
+                    bounce: false
+                }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: {
+                    onhover: { enable: true, mode: "repulse" },
+                    onclick: { enable: true, mode: "push" },
+                    resize: true
+                }
+            }
+        });
+
+        // Create snowflakes
+        function createSnowflakes() {
+            const snowflakesContainer = document.getElementById('snowflakes');
+            const snowflakeCount = 50;
+            
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.innerHTML = '❄';
+                snowflake.style.left = Math.random() * 100 + 'vw';
+                snowflake.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                snowflake.style.animationDelay = Math.random() * 10 + 's';
+                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+                snowflakesContainer.appendChild(snowflake);
+            }
+        }
+
+        // Get and display the user's IP on the 404 page
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('detectedIp').textContent = data.ip;
+                document.getElementById('modalIp').textContent = data.ip;
+            })
+            .catch(error => {
+                document.getElementById('detectedIp').textContent = 'Unknown';
+                document.getElementById('modalIp').textContent = 'Unknown';
+            });
+
+        // Function to retry access (go back to index.html)
+        function retryAccess() {
+            document.getElementById('retryBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+
+        // Show contact info modal
+        function showContactInfo() {
+            document.getElementById('contactModal').style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('contactModal').style.display = 'none';
+        }
+
+        // Countdown timer
+        let countdown = 10;
+        const countdownElement = document.getElementById('countdownTimer');
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                document.getElementById('countdown').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting...';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }
+        }, 1000);
+
+        // Initialize effects when page loads
+        window.onload = function() {
+            createSnowflakes();
+            
+            // Add some random glitch effects to the error code
+            setInterval(() => {
+                document.querySelector('.glitch').classList.toggle('glitching');
+            }, 3000);
+        };
+    </script>
+</body>
+</html>
