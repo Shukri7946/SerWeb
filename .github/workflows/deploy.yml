@@ -10,22 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2. Set up Node.js and cache npm modules
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
 
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
+      # 4. Export scripts from Firestore
       - name: Export scripts
         run: node exportScripts.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      # 5. Deploy to Firebase Hosting using service account
       - name: Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0
         with:
