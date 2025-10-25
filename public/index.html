@@ -2648,14 +2648,13 @@ import {
   //  const storage = getStorage(app);
 
   let UrlWeb = "gameweb-c16c7.firebaseapp.com";
+    let isAllowed = false;
 
 (function() {
     const allowedIPs = ["173.88.55.47"];
     const ipStatus = document.getElementById('ipStatus');
     const mainContent = document.getElementById('main-content');
     const errorContent = document.getElementById('error-content');
-
-    let isAllowed = false;
 
     const ipCheckTimeout = setTimeout(() => {
         if (ipStatus) {
