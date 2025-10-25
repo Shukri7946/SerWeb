@@ -1,0 +1,23 @@
+{
+  "name": "seraphblox",
+  "version": "1.0.0",
+  "description": "",
+  "main": "exportScripts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shukri7946/SerWeb.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shukri7946/SerWeb/issues"
+  },
+  "homepage": "https://github.com/Shukri7946/SerWeb#readme",
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  }
+}
