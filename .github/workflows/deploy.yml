@@ -3,7 +3,7 @@ name: Firebase Hosting Deploy
 on:
   push:
     branches:
-      - main  # change to your deployment branch if needed
+      - main  # deploys whenever you push to main
 
 jobs:
   build-and-deploy:
@@ -14,26 +14,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up Node.js environment
+      # 2. Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
 
-      # 3. Install project dependencies
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4. Export scripts from Firestore
-      - name: Export scripts
-        run: node exportScripts.js
+      # 4. Prepare Firebase service account
+      - name: Create serviceAccount.json
+        run: echo "$FIREBASE_SERVICE_ACCOUNT" > serviceAccount.json
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      # 5. Install Firebase CLI globally
+      # 5. Export scripts using Firebase Admin SDK
+      - name: Export scripts
+        run: node exportScripts.js
+
+      # 6. Install Firebase CLI globally
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      # 6. Deploy updated scripts to Firebase Hosting
+      # 7. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
-        run: firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only hosting --project gameweb-c16c7
