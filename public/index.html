@@ -2935,16 +2935,18 @@ input:checked + .toggle-slider:before {
 
     // Firebase v9 modular imports
    // Complete Firebase v9 modular imports
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { 
+    initializeApp 
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
     getAuth, 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
     updateProfile, 
     signOut, 
-    onAuthStateChanged,
-    sendPasswordResetEmail,
-    sendEmailVerification
+    onAuthStateChanged, 
+    sendPasswordResetEmail, 
+    sendEmailVerification 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { 
     getFirestore, 
@@ -2960,13 +2962,10 @@ import {
     orderBy, 
     serverTimestamp, 
     setDoc, 
-    limit 
+    limit, 
+    increment
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { 
-    getStorage, 
-    ref, 
-    uploadBytes
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
 
 
@@ -2982,7 +2981,7 @@ import {
 };
 
     // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
+     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
   //  const storage = getStorage(app);
@@ -2998,27 +2997,20 @@ import {
     const mainContent = document.getElementById('main-content');
     const errorContent = document.getElementById('error-content');
 
-  const ipServices = [
-    // Primary services (your original list)
-    'https://api.ipify.org?format=json',
-    'https://ip.seeip.org/jsonip?',
-    'https://api.myip.com',
-    
-    // Additional reliable services
-    'https://api.ip.sb/jsonip',
-    'https://ipinfo.io/json',
-    'https://ipapi.co/json/',
-    'https://jsonip.com',
-    'https://worldtimeapi.org/api/ip',
-    'https://httpbin.org/ip',
-    'https://icanhazip.com',
-    'https://ident.me',
-    'https://ipecho.net/plain',
-    'https://checkip.amazonaws.com',
-    'https://ip.seeip.org',
-    'https://api64.ipify.org?format=json',
-    'https://ipv4.seeip.org/jsonip'
+const ipServices = [
+  'https://api.ipify.org?format=json',
+  'https://api64.ipify.org?format=json'
 ];
+
+
+
+
+
+
+
+
+
+
     const ipCheckTimeout = setTimeout(() => {
         if (ipStatus) {
             ipStatus.className = 'ip-status denied';
@@ -3196,22 +3188,21 @@ end`,
 let currentIP = null;
 let lastUpdateTime = 0;
 let skipGuestOnSignOut = false;
-let sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
-sessionStorage.setItem('sessionId', sessionId);
 
+// Use sessionStorage for per-tab sessions; can switch to localStorage if you want cross-tab persistence
+let sessionId = localStorage.getItem('sessionId') || crypto.randomUUID();
+localStorage.setItem('sessionId', sessionId);
+
+
+// Only reliable IPv4 IP services
 const ipServices = [
-  'https://api.ipify.org?format=json',
-  'https://api64.ipify.org?format=json',
-  'https://ipapi.co/json/',
-  'https://ipinfo.io/json',
-  'https://api.ip.sb/jsonip',
-  'https://ip.seeip.org/jsonip',
-  'https://ipv4.seeip.org/jsonip',
-  'https://jsonip.com',
-  'https://ipwhois.io/json/',
-  'https://ip-api.com/json/',
-  'https://extreme-ip-lookup.com/json/'
+  'https://api.ipify.org?format=json'
 ];
+
+// Device ID for deduplication
+function getDeviceId() {
+  return btoa(navigator.userAgent + sessionId).slice(0, 32);
+}
 
 async function fetchWithTimeout(url, timeout = 5000) {
   return Promise.race([
@@ -3226,25 +3217,12 @@ async function getClientIP() {
     try {
       const response = await fetchWithTimeout(service, 5000);
       if (!response.ok) return null;
-
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        return null; // skip non-JSON responses
-      }
-      return data.ip || data.ipAddress || data.IP || data.query || null;
+      const data = await response.json();
+      if (data.ip && data.ip.includes('.')) return data.ip; // IPv4 only
+      return null;
     } catch { return null; }
   }));
-  const validIPs = results.filter(ip => ip);
-  if (!validIPs.length) {
-    currentIP = 'guest_' + Date.now() + '_' + crypto.randomUUID();
-    return currentIP;
-  }
-  const counts = {};
-  validIPs.forEach(ip => counts[ip] = (counts[ip] || 0) + 1);
-  currentIP = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+  currentIP = results.find(ip => ip) || 'guest_' + Date.now() + '_' + crypto.randomUUID();
   return currentIP;
 }
 
@@ -3256,21 +3234,23 @@ async function updateOnlineUsers() {
 
   try {
     const clientIP = await getClientIP();
+    const deviceId = getDeviceId();
     const onlineUsersRef = collection(db, 'onlineUsers');
     let docId, data;
 
     if (currentUser) {
-      // Delete any guest docs with same IP
+      // Delete any guest with same IP + deviceId
       const guestQuery = query(
         onlineUsersRef,
         where('ip', '==', clientIP),
-        where('isGuest', '==', true)
+        where('isGuest', '==', true),
+        where('deviceId', '==', deviceId)
       );
       const guestSnapshot = await getDocs(guestQuery);
       guestSnapshot.forEach(doc => deleteDoc(doc.ref));
 
       // Update/create registered user doc
-      docId = `user_${currentUser.uid}_${sessionId}`;
+      docId = `user_${currentUser.uid}_${deviceId}`;
       data = {
         uid: currentUser.uid,
         username: currentUser.username,
@@ -3279,27 +3259,30 @@ async function updateOnlineUsers() {
         lastSeen: serverTimestamp(),
         status: 'online',
         isGuest: false,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
+        deviceId
       };
       await setDoc(doc(onlineUsersRef, docId), data, { merge: true });
 
     } else {
-      // Only create guest if no registered user exists for this IP
+      // Only create guest if no registered user exists for same IP + deviceId
       const regQuery = query(
         onlineUsersRef,
         where('ip', '==', clientIP),
-        where('isGuest', '==', false)
+        where('isGuest', '==', false),
+        where('deviceId', '==', deviceId)
       );
       const regSnapshot = await getDocs(regQuery);
       if (regSnapshot.empty) {
-        docId = `guest_${clientIP}_${sessionId}`;
+        docId = `guest_${clientIP}_${deviceId}`;
         data = {
           ip: clientIP,
           sessionId,
           lastSeen: serverTimestamp(),
           status: 'online',
           isGuest: true,
-          userAgent: navigator.userAgent
+          userAgent: navigator.userAgent,
+          deviceId
         };
         await setDoc(doc(onlineUsersRef, docId), data, { merge: true });
       }
@@ -3312,14 +3295,15 @@ async function updateOnlineUsers() {
     const guestUsers = new Set();
     snapshot.forEach(doc => {
       const d = doc.data();
-      if (d.isGuest) guestUsers.add(`${d.ip}_${d.sessionId}`);
+      if (d.isGuest) guestUsers.add(`${d.ip}_${d.deviceId}`);
       else if (d.uid) registeredUsers.add(`${d.uid}_${doc.id}`);
     });
-   const registeredEl = document.getElementById('registeredUsers');
-const guestEl = document.getElementById('guestUsers');
 
-if (registeredEl) registeredEl.textContent = registeredUsers.size;
-if (guestEl) guestEl.textContent = guestUsers.size;
+    const registeredEl = document.getElementById('registeredUsers');
+    const guestEl = document.getElementById('guestUsers');
+
+    if (registeredEl) registeredEl.textContent = registeredUsers.size;
+    if (guestEl) guestEl.textContent = guestUsers.size;
 
   } catch (err) {
     console.error("Error updating online users:", err);
@@ -3331,13 +3315,15 @@ async function handleUserSignIn() {
   lastUpdateTime = 0;
   try {
     const clientIP = await getClientIP();
+    const deviceId = getDeviceId();
     const onlineUsersRef = collection(db, 'onlineUsers');
 
-    // Delete any guest with same IP
+    // Delete any guest with same IP + deviceId
     const guestQuery = query(
       onlineUsersRef,
       where('ip', '==', clientIP),
-      where('isGuest', '==', true)
+      where('isGuest', '==', true),
+      where('deviceId', '==', deviceId)
     );
     const guestSnapshot = await getDocs(guestQuery);
     guestSnapshot.forEach(doc => deleteDoc(doc.ref));
@@ -3353,22 +3339,23 @@ async function handleUserSignOut() {
   try {
     skipGuestOnSignOut = true;
     const clientIP = await getClientIP();
+    const deviceId = getDeviceId();
     const onlineUsersRef = collection(db, 'onlineUsers');
     const userDocRef = currentUser
-      ? doc(onlineUsersRef, `user_${currentUser.uid}_${sessionId}`)
-      : doc(onlineUsersRef, `guest_${clientIP}_${sessionId}`);
+      ? doc(onlineUsersRef, `user_${currentUser.uid}_${deviceId}`)
+      : doc(onlineUsersRef, `guest_${clientIP}_${deviceId}`);
     await deleteDoc(userDocRef);
 
     currentIP = null;
     lastUpdateTime = 0;
 
-    // Delay guest creation only if no registered user exists
     setTimeout(async () => {
       skipGuestOnSignOut = false;
       const regQuery = query(
         onlineUsersRef,
         where('ip', '==', clientIP),
-        where('isGuest', '==', false)
+        where('isGuest', '==', false),
+        where('deviceId', '==', deviceId)
       );
       const regSnapshot = await getDocs(regQuery);
       if (regSnapshot.empty) await updateOnlineUsers();
@@ -3383,23 +3370,23 @@ async function handleUserSignOut() {
 // Visibility & unload
 function setupPageVisibility() {
   document.addEventListener('visibilitychange', async () => {
-    const clientIP = await getClientIP();
-    const onlineUsersRef = collection(db, 'onlineUsers');
-    const docRef = currentUser
-      ? doc(onlineUsersRef, `user_${currentUser.uid}_${sessionId}`)
-      : doc(onlineUsersRef, `guest_${clientIP}_${sessionId}`);
     const status = document.visibilityState === 'hidden' ? 'away' : 'online';
-    await setDoc(docRef, { lastSeen: serverTimestamp(), status }, { merge: true });
+    await updateOnlineUsersWithStatus(status);
   });
 
   window.addEventListener('beforeunload', async () => {
-    const clientIP = await getClientIP();
-    const onlineUsersRef = collection(db, 'onlineUsers');
-    const docRef = currentUser
-      ? doc(onlineUsersRef, `user_${currentUser.uid}_${sessionId}`)
-      : doc(onlineUsersRef, `guest_${clientIP}_${sessionId}`);
-    await setDoc(docRef, { lastSeen: serverTimestamp(), status: 'offline' }, { merge: true });
+    await updateOnlineUsersWithStatus('offline');
   });
+}
+
+async function updateOnlineUsersWithStatus(status) {
+  const clientIP = await getClientIP();
+  const deviceId = getDeviceId();
+  const onlineUsersRef = collection(db, 'onlineUsers');
+  const docRef = currentUser
+    ? doc(onlineUsersRef, `user_${currentUser.uid}_${deviceId}`)
+    : doc(onlineUsersRef, `guest_${clientIP}_${deviceId}`);
+  await setDoc(docRef, { lastSeen: serverTimestamp(), status }, { merge: true });
 }
 
 // Cleanup offline users
@@ -3425,6 +3412,7 @@ function startOnlineUsersTracker() {
 // Initialize
 startOnlineUsersTracker();
 setupPageVisibility();
+
 
 
 async function getUserDetailedStats() {
@@ -3774,34 +3762,26 @@ async function updateUploadStats() {
 ///////////////////////////////////////////////////////////////////////////
 
 
-
-//Trending 
 async function loadTrendingScripts() {
     try {
         const trendingScriptsGrid = document.getElementById('trendingScriptsGrid');
         trendingScriptsGrid.innerHTML = '<div class="loader" style="display: block;"></div>';
-        
-        // Get scripts sorted by views (most popular first)
         const snapshot = await getDocs(
             query(
-                collection(db, 'scripts'), 
+                collection(db, 'scripts'),
                 orderBy('Views', 'desc'),
                 limit(12)
             )
         );
-        
         trendingScriptsGrid.innerHTML = '';
-        
         if (snapshot.empty) {
             trendingScriptsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--gray);">No trending scripts found.</p>';
             return;
         }
-        
         snapshot.forEach(doc => {
             const script = { id: doc.id, ...doc.data() };
             displayTrendingScript(script);
         });
-        
     } catch (error) {
         console.error('Error loading trending scripts:', error);
         document.getElementById('trendingScriptsGrid').innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--danger);">Error loading trending scripts.</p>';
@@ -3813,13 +3793,9 @@ function displayTrendingScript(script) {
     const scriptCard = document.createElement('div');
     scriptCard.className = 'script-card';
     scriptCard.id = `trending-script-${script.id}`;
-    
     const formattedDate = formatDate(script.createdAt?.toDate() || new Date());
     const imageSrc = script.imageBase64 || "https://cdn-icons-png.flaticon.com/512/2721/2721620.png";
-    
-    // Add trending badge
-    const isTrending = (script.Views || 0) > 100; // Example condition
-    
+    const isTrending = (script.Views || 0) > 100;
     scriptCard.innerHTML = `
         <div class="script-image">
             ${script.patched ? '<div class="patched-overlay">PATCHED</div>' : ''}
@@ -3851,14 +3827,14 @@ function displayTrendingScript(script) {
             </div>
         </div>
     `;
-    
     trendingScriptsGrid.appendChild(scriptCard);
     updateTrendingGameName(script.id, script.gameId);
 }
 
 async function updateTrendingGameName(scriptId, gameId) {
     try {
-        const gameName = await getRobloxGameName(gameId);
+        const gameDoc = await getDoc(doc(db, 'games', gameId));
+        const gameName = gameDoc.exists() ? gameDoc.data().name : 'Roblox Game';
         const gameElement = document.getElementById(`trending-game-name-${scriptId}`);
         if (gameElement) {
             gameElement.innerHTML = `<i class="fas fa-gamepad"></i> ${gameName}`;
@@ -3995,42 +3971,32 @@ async function loadScripts() {
                 }
             }
         }
-
+        
         // View script details
 async function viewScriptDetails(scriptId) {
-     await debugScriptAccess(scriptId); // Temporary debug
+    await debugScriptAccess(scriptId);
     try {
-        const docRef = doc(db, 'scripts', scriptId);
+       const docRef = doc(db, 'scripts', scriptId);
         const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
+        if (!docSnap.exists) {
             showNotification('Script not found', true);
             return;
         }
-
         const script = { id: docSnap.id, ...docSnap.data() };
-        
-        // Check if user has permission to read this script
         if (!script.author && !script.public) {
             showNotification('You do not have permission to view this script', true);
             return;
         }
-
         showScriptDetails(script);
-        
-        // Increment view count with error handling
         try {
             await updateDoc(docRef, {
-                Views: (script.Views || 0) + 1
+                Views: increment(1)
             });
         } catch (updateError) {
             console.warn('Could not update view count:', updateError);
-            // Continue showing script even if view count update fails
         }
-        
     } catch (error) {
         console.error('Error loading script details:', error);
-        
         if (error.code === 'permission-denied') {
             showNotification('Permission denied: You cannot view this script', true);
         } else if (error.code === 'not-found') {
@@ -4244,13 +4210,13 @@ async function editScript(scriptId) {
         }
 
         
-   async function copyScript(scriptId) {
-        await debugCopyScript(scriptId); // Debug first
+async function copyScript(scriptId) {
+    await debugCopyScript(scriptId);
     try {
-        const docRef = doc(db, 'scripts', scriptId);
-        const docSnap = await getDoc(docRef);
+        const docRef = doc(db, 'scripts', scriptId); // Fixed
+        const docSnap = await getDoc(docRef); // Fixed
 
-        if (!docSnap.exists()) {
+        if (!docSnap.exists) {
             showNotification('Script not found', true);
             return;
         }
@@ -4261,13 +4227,13 @@ async function editScript(scriptId) {
         await navigator.clipboard.writeText(script.code || '');
         showNotification('Script copied to clipboard!');
 
-        // Update copyCount - FIXED: Use specific field update
+         // Update copyCount
         await updateDoc(docRef, {
-            copyCount: (script.copyCount || 0) + 1
+            copyCount: increment(1)
         });
 
         // Update the UI immediately
-        const scriptCard = document.getElementById(`script-${scriptId}`);
+       const scriptCard = document.getElementById(`script-${scriptId}`);
         if (scriptCard) {
             const downloadSpan = scriptCard.querySelector('.script-meta span:nth-child(2)');
             if (downloadSpan) {
@@ -4281,12 +4247,12 @@ async function editScript(scriptId) {
         
         if (error.code === 'permission-denied') {
             console.log('Permission denied for copyCount update');
-            // Still show success for copy, just log the update error
         } else {
             showNotification('Error copying script', true);
         }
     }
 }
+
 
 async function debugCopyScript(scriptId) {
     try {
