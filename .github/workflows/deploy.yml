@@ -6,7 +6,7 @@ on:
       - main
   schedule:
     - cron: '*/5 * * * *'  # Runs every 5 minutes
-  workflow_dispatch:        # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -19,11 +19,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up Node.js
+      # 2. Set up Node.js (use LTS 20 for stability)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 22
+          node-version: 20
 
       # 3. Cache Node modules
       - name: Cache Node modules
@@ -37,25 +37,35 @@ jobs:
       # 4. Install dependencies
       - name: Install dependencies
         run: npm install
-        working-directory: .   # ensure npm runs in repo root
 
-      # 5. Export scripts from Firestore
+      # 5. Verify script folder exists
+      - name: Ensure script folder
+        run: mkdir -p public/scripts
+
+      # 6. Export scripts from Firestore
       - name: Export scripts
-        run: node exportScripts.js
-        working-directory: .   # ensure script runs from root
+        run: |
+          echo "Running exportScripts.js..."
+          node exportScripts.js
+          echo "Files in public/scripts after export:"
+          ls -la public/scripts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      # 6. Commit and push exported scripts if there are changes
+      # 7. Commit and push exported scripts if they exist
       - name: Commit and push exported scripts
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/scripts/*
-          git diff --quiet || git commit -m "Auto-export scripts from Firestore [skip ci]"
-          git push origin main
+          if [ "$(ls -A public/scripts)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add public/scripts/*
+            git diff --quiet || git commit -m "Auto-export scripts from Firestore [skip ci]"
+            git push origin main
+          else
+            echo "No scripts exported, skipping commit."
+          fi
 
-      # 7. Deploy to Firebase Hosting
+      # 8. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0
         with:
