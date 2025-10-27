@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '*/5 * * * *'  # Runs every 5 minutes
+    - cron: '*/2 * * * *'  # Runs every 2 minutes
   workflow_dispatch:
 
 jobs:
@@ -52,16 +52,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      # 7. Deploy to Firebase Hosting (MOVED UP - deploy current files)
-      - name: Deploy to Firebase Hosting
-        uses: w9jds/firebase-action@v2.2.0
-        with:
-          args: deploy --only hosting
-        env:
-          PROJECT_ID: gameweb-c16c7
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
-      # 8. Commit and push exported scripts if they exist (MOVED DOWN)
+      # 7. Commit and push exported scripts FIRST
       - name: Commit and push exported scripts
         run: |
           if [ "$(ls -A public/scripts)" ]; then
@@ -73,3 +64,14 @@ jobs:
           else
             echo "No scripts exported, skipping commit."
           fi
+
+      # 8. Deploy to Firebase Hosting AFTER commit
+      - name: Deploy to Firebase Hosting
+        uses: w9jds/firebase-action@v2.2.0
+        with:
+          args: deploy --only hosting
+        env:
+          PROJECT_ID: gameweb-c16c7
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+          
