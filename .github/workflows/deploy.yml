@@ -52,20 +52,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      # 7. Commit and push exported scripts if they exist
-      - name: Commit and push exported scripts
-        run: |
-          if [ "$(ls -A public/scripts)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add public/scripts/*
-            git diff --quiet || git commit -m "Auto-export scripts from Firestore [skip ci]"
-            git push origin main
-          else
-            echo "No scripts exported, skipping commit."
-          fi
-
-      # 8. Deploy to Firebase Hosting
+      # 7. Deploy to Firebase Hosting (MOVED UP - deploy current files)
       - name: Deploy to Firebase Hosting
         uses: w9jds/firebase-action@v2.2.0
         with:
@@ -73,3 +60,16 @@ jobs:
         env:
           PROJECT_ID: gameweb-c16c7
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      # 8. Commit and push exported scripts if they exist (MOVED DOWN)
+      - name: Commit and push exported scripts
+        run: |
+          if [ "$(ls -A public/scripts)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add public/scripts/*
+            git diff --cached --quiet || git commit -m "Auto-export scripts from Firestore [skip ci]"
+            git push origin main
+          else
+            echo "No scripts exported, skipping commit."
+          fi
